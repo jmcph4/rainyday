@@ -1,8 +1,8 @@
-use clap::{App, Arg, ArgMatches};
+use clap::{App, Arg, ArgMatches, crate_version};
 
 fn main() {
     let _matches: ArgMatches = App::new("rainyday")
-        .version("0.0.1")
+        .version(crate_version!())
         .arg(Arg::with_name("input_file").required(true))
         .get_matches();
 }
