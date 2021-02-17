@@ -1,8 +1,13 @@
-use clap::{App, Arg, ArgMatches, crate_version};
+use std::path::PathBuf;
+
+use clap::{crate_version, Clap};
+
+#[derive(Clap)]
+#[clap(version = crate_version!())]
+pub struct Opts {
+    input_file: PathBuf,
+}
 
 fn main() {
-    let _matches: ArgMatches = App::new("rainyday")
-        .version(crate_version!())
-        .arg(Arg::with_name("input_file").required(true))
-        .get_matches();
+    let _opts: Opts = Opts::parse();
 }
