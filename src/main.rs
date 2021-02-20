@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 use clap::{crate_version, Clap};
 
+pub mod config;
+
 #[derive(Clap)]
 #[clap(version = crate_version!())]
 #[allow(dead_code)]
