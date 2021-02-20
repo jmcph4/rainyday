@@ -9,6 +9,8 @@ pub mod config;
 #[allow(dead_code)]
 pub struct Opts {
     input_file: PathBuf,
+    #[clap(short, long)]
+    config: Option<PathBuf>
 }
 
 fn main() {
