@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufReader, Read};
 
+use anyhow::{anyhow, Context};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -20,19 +21,15 @@ impl Default for Config {
 }
 
 impl TryFrom<File> for Config {
-    type Error = String;
+    type Error = anyhow::Error;
 
     fn try_from(value: File) -> Result<Self, Self::Error> {
         let mut contents: String = String::new();
         let mut buf: BufReader<File> = BufReader::new(value);
-        match buf.read_to_string(&mut contents) {
-            Ok(t) => t,
-            Err(e) => return Err(format!("{}", e)),
-        };
+        buf.read_to_string(&mut contents)
+            .with_context(|| anyhow!("Reading configuration file"))?;
 
-        match toml::from_str(&contents) {
-            Ok(t) => t,
-            Err(e) => Err(format!("{}", e)),
-        }
+        Ok(toml::from_str(&contents)
+            .with_context(|| anyhow!("Parsing configuration file"))?)
     }
 }
