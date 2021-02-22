@@ -10,7 +10,7 @@ pub mod config;
 pub struct Opts {
     input_file: PathBuf,
     #[clap(short, long)]
-    config: Option<PathBuf>
+    config: Option<PathBuf>,
 }
 
 fn main() {
