@@ -75,16 +75,63 @@ impl TryFrom<Bytes> for RequestPayload {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PiecePayload {
-    index: usize,
-    begin: usize,
+    index: u32,
+    begin: u32,
     piece: Vec<u8>,
+}
+
+impl TryFrom<Bytes> for PiecePayload {
+    type Error = DecodeError;
+
+    fn try_from(value: Bytes) -> Result<Self, Self::Error> {
+        if value.len() > 3 * size_of::<u32>() {
+            return Err(Self::Error::TooLong);
+        }
+
+        if value.len() < 3 * size_of::<u32>() {
+            return Err(Self::Error::TooShort);
+        }
+
+        let index_bytes: [u8; 4] = [value[0], value[1], value[2], value[3]];
+        let begin_bytes: [u8; 4] = [value[4], value[5], value[6], value[7]];
+
+        Ok(Self {
+            index: u32::from_be_bytes(index_bytes),
+            begin: u32::from_be_bytes(begin_bytes),
+            piece: value[8..].to_vec(),
+        })
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct CancelPayload {
-    index: usize,
-    begin: usize,
-    length: usize,
+    index: u32,
+    begin: u32,
+    length: u32,
+}
+
+impl TryFrom<Bytes> for CancelPayload {
+    type Error = DecodeError;
+
+    fn try_from(value: Bytes) -> Result<Self, Self::Error> {
+        if value.len() > 3 * size_of::<u32>() {
+            return Err(Self::Error::TooLong);
+        }
+
+        if value.len() < 3 * size_of::<u32>() {
+            return Err(Self::Error::TooShort);
+        }
+
+        let index_bytes: [u8; 4] = [value[0], value[1], value[2], value[3]];
+        let begin_bytes: [u8; 4] = [value[4], value[5], value[6], value[7]];
+        let length_bytes: [u8; 4] = [value[8], value[9], value[10], value[11]];
+
+        Ok(Self {
+            index: u32::from_be_bytes(index_bytes),
+            begin: u32::from_be_bytes(begin_bytes),
+            length: u32::from_be_bytes(length_bytes),
+        })
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
