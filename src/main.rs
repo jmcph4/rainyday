@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
 use clap::{crate_version, Clap};
+#[macro_use]
+extern crate enum_display_derive;
 
 pub mod config;
 pub mod protocol;

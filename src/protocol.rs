@@ -1,4 +1,13 @@
 #![allow(dead_code)]
+use std::fmt::Display;
+
+use thiserror::Error;
+
+#[derive(Debug, Display, PartialEq, Eq, Error)]
+pub enum DecodeError {
+    TooLong,
+    TooShort,
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct HavePayload {
