@@ -13,3 +13,9 @@ pub struct RequestPayload {
     begin: usize,
     length: usize,
 }
+
+pub struct PiecePayload {
+    index: usize,
+    begin: usize,
+    piece: Vec<u8>,
+}
