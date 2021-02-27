@@ -25,3 +25,15 @@ pub struct CancelPayload {
     begin: usize,
     length: usize,
 }
+
+enum PeerMessage {
+    Choke,
+    Unchoke,
+    Interested,
+    NotInterested,
+    Have(HavePayload),
+    Bitfield(BitfieldPayload),
+    Request(RequestPayload),
+    Piece(PiecePayload),
+    Cancel(CancelPayload),
+}
