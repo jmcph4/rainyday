@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::{crate_version, Clap};
 
 pub mod config;
+pub mod protocol;
 
 #[derive(Clap)]
 #[clap(version = crate_version!())]
