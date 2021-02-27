@@ -3,3 +3,7 @@
 pub struct HavePayload {
     index: usize,
 }
+
+pub struct BitfieldPayload {
+    bitfield: Vec<u8>,
+}
