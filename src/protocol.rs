@@ -19,3 +19,9 @@ pub struct PiecePayload {
     begin: usize,
     piece: Vec<u8>,
 }
+
+pub struct CancelPayload {
+    index: usize,
+    begin: usize,
+    length: usize,
+}
