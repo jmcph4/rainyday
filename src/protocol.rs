@@ -176,19 +176,19 @@ impl TryFrom<Bytes> for PeerMessage {
         let id: u32 = u32::from_be_bytes(id_bytes);
 
         match id {
-            1 => Ok(Self::Choke),
-            2 => Ok(Self::Unchoke),
-            3 => Ok(Self::Interested),
-            4 => Ok(Self::NotInterested),
-            5 => Ok(Self::Have(HavePayload::try_from(value[8..].to_vec())?)),
-            6 => Ok(Self::Bitfield(BitfieldPayload::try_from(
+            0 => Ok(Self::Choke),
+            1 => Ok(Self::Unchoke),
+            2 => Ok(Self::Interested),
+            3 => Ok(Self::NotInterested),
+            4 => Ok(Self::Have(HavePayload::try_from(value[8..].to_vec())?)),
+            5 => Ok(Self::Bitfield(BitfieldPayload::try_from(
                 value[8..].to_vec(),
             )?)),
-            7 => Ok(Self::Request(RequestPayload::try_from(
+            6 => Ok(Self::Request(RequestPayload::try_from(
                 value[8..].to_vec(),
             )?)),
-            8 => Ok(Self::Piece(PiecePayload::try_from(value[8..].to_vec())?)),
-            9 => {
+            7 => Ok(Self::Piece(PiecePayload::try_from(value[8..].to_vec())?)),
+            8 => {
                 Ok(Self::Cancel(CancelPayload::try_from(value[8..].to_vec())?))
             }
             _ => Err(DecodeError::InvalidMessageType),
