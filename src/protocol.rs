@@ -11,6 +11,8 @@ type Bytes = Vec<u8>;
 pub enum DecodeError {
     TooLong,
     TooShort,
+    WrongLength,
+    InvalidMessageType,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -153,4 +155,43 @@ enum PeerMessage {
     Request(RequestPayload),
     Piece(PiecePayload),
     Cancel(CancelPayload),
+}
+
+impl TryFrom<Bytes> for PeerMessage {
+    type Error = DecodeError;
+
+    fn try_from(value: Bytes) -> Result<Self, Self::Error> {
+        if value.len() < 2 * size_of::<u32>() {
+            return Err(DecodeError::TooShort);
+        }
+
+        let length_bytes: [u8; 4] = [value[0], value[1], value[2], value[3]];
+        let length: u32 = u32::from_be_bytes(length_bytes);
+
+        if value.len() != length as usize {
+            return Err(DecodeError::WrongLength);
+        }
+
+        let id_bytes: [u8; 4] = [value[4], value[5], value[6], value[7]];
+        let id: u32 = u32::from_be_bytes(id_bytes);
+
+        match id {
+            1 => Ok(Self::Choke),
+            2 => Ok(Self::Unchoke),
+            3 => Ok(Self::Interested),
+            4 => Ok(Self::NotInterested),
+            5 => Ok(Self::Have(HavePayload::try_from(value[8..].to_vec())?)),
+            6 => Ok(Self::Bitfield(BitfieldPayload::try_from(
+                value[8..].to_vec(),
+            )?)),
+            7 => Ok(Self::Request(RequestPayload::try_from(
+                value[8..].to_vec(),
+            )?)),
+            8 => Ok(Self::Piece(PiecePayload::try_from(value[8..].to_vec())?)),
+            9 => {
+                Ok(Self::Cancel(CancelPayload::try_from(value[8..].to_vec())?))
+            }
+            _ => Err(DecodeError::InvalidMessageType),
+        }
+    }
 }
