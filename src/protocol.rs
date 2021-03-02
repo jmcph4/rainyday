@@ -42,6 +42,14 @@ pub struct BitfieldPayload {
     bitfield: Vec<u8>,
 }
 
+impl TryFrom<Bytes> for BitfieldPayload {
+    type Error = DecodeError;
+
+    fn try_from(value: Bytes) -> Result<Self, Self::Error> {
+        Ok(Self { bitfield: value })
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct RequestPayload {
     index: u32,
