@@ -180,6 +180,18 @@ impl TryFrom<Bytes> for CancelPayload {
     }
 }
 
+impl From<CancelPayload> for Bytes {
+    fn from(value: CancelPayload) -> Self {
+        let mut bytes: Bytes = vec![];
+
+        bytes.extend_from_slice(&value.index.to_be_bytes());
+        bytes.extend_from_slice(&value.begin.to_be_bytes());
+        bytes.extend_from_slice(&value.length.to_be_bytes());
+
+        bytes
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum PeerMessage {
     Choke,
