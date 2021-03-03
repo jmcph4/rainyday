@@ -71,6 +71,18 @@ pub struct RequestPayload {
     length: u32,
 }
 
+impl From<RequestPayload> for Bytes {
+    fn from(value: RequestPayload) -> Self {
+        let mut bytes: Bytes = vec![];
+
+        bytes.extend_from_slice(&value.index.to_be_bytes());
+        bytes.extend_from_slice(&value.begin.to_be_bytes());
+        bytes.extend_from_slice(&value.length.to_be_bytes());
+
+        bytes
+    }
+}
+
 impl TryFrom<Bytes> for RequestPayload {
     type Error = DecodeError;
 
