@@ -39,6 +39,12 @@ impl TryFrom<Bytes> for HavePayload {
     }
 }
 
+impl From<HavePayload> for Bytes {
+    fn from(value: HavePayload) -> Self {
+        value.index.to_be_bytes().to_vec()
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BitfieldPayload {
     bitfield: Vec<u8>,
