@@ -137,6 +137,18 @@ impl TryFrom<Bytes> for PiecePayload {
     }
 }
 
+impl From<PiecePayload> for Bytes {
+    fn from(value: PiecePayload) -> Self {
+        let mut bytes: Bytes = vec![];
+
+        bytes.extend_from_slice(&value.index.to_be_bytes());
+        bytes.extend_from_slice(&value.begin.to_be_bytes());
+        bytes.extend_from_slice(&value.piece);
+
+        bytes
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct CancelPayload {
     index: u32,
