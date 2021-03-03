@@ -58,6 +58,12 @@ impl TryFrom<Bytes> for BitfieldPayload {
     }
 }
 
+impl From<BitfieldPayload> for Bytes {
+    fn from(value: BitfieldPayload) -> Self {
+        value.bitfield
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct RequestPayload {
     index: u32,
