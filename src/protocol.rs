@@ -243,3 +243,81 @@ impl TryFrom<Bytes> for PeerMessage {
         }
     }
 }
+
+impl From<PeerMessage> for Bytes {
+    fn from(value: PeerMessage) -> Self {
+        /* fields we'll be mutating along the way */
+        let mut length: u32 = 1;
+        let id: u32;
+        let mut payload: Bytes = vec![];
+
+        /* handle each message case */
+        match value {
+            PeerMessage::Choke => {
+                id = 0;
+            }
+            PeerMessage::Unchoke => {
+                id = 1;
+            }
+            PeerMessage::Interested => {
+                id = 2;
+            }
+            PeerMessage::NotInterested => {
+                id = 3;
+            }
+            PeerMessage::Have(p) => {
+                length = 5;
+                id = 4;
+                payload = p.into();
+            }
+            PeerMessage::Bitfield(p) => {
+                length = 1 + p.bitfield.len() as u32;
+                id = 5;
+                payload = p.into();
+            }
+            PeerMessage::Request(p) => {
+                length = 12;
+                id = 6;
+                payload = {
+                    let tmp: Vec<Bytes> = vec![
+                        p.index.to_be_bytes().to_vec(),
+                        p.begin.to_be_bytes().to_vec(),
+                        p.length.to_be_bytes().to_vec(),
+                    ];
+                    tmp.iter().flatten().cloned().collect()
+                };
+            }
+            PeerMessage::Piece(p) => {
+                length = 9 + p.piece.len() as u32;
+                id = 7;
+                payload = {
+                    let tmp: Vec<Bytes> = vec![
+                        p.index.to_be_bytes().to_vec(),
+                        p.begin.to_be_bytes().to_vec(),
+                        p.piece,
+                    ];
+                    tmp.iter().flatten().cloned().collect()
+                };
+            }
+            PeerMessage::Cancel(p) => {
+                length = 12;
+                id = 8;
+                payload = {
+                    let tmp: Vec<Bytes> = vec![
+                        p.index.to_be_bytes().to_vec(),
+                        p.begin.to_be_bytes().to_vec(),
+                        p.length.to_be_bytes().to_vec(),
+                    ];
+                    tmp.iter().flatten().cloned().collect()
+                };
+            }
+        }
+
+        /* marshal everything into bytes */
+        let length_bytes: Bytes = length.to_be_bytes().to_vec();
+        let id_bytes: Bytes = id.to_be_bytes().to_vec();
+        let bytes: Vec<Bytes> = vec![length_bytes, id_bytes, payload];
+
+        bytes.iter().flatten().cloned().collect()
+    }
+}
