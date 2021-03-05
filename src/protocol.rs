@@ -232,16 +232,16 @@ impl TryFrom<Bytes> for PeerMessage {
             1 => Ok(Self::Unchoke),
             2 => Ok(Self::Interested),
             3 => Ok(Self::NotInterested),
-            4 => Ok(Self::Have(HavePayload::try_from(value[8..].to_vec())?)),
+            4 => Ok(Self::Have(HavePayload::try_from(value[5..].to_vec())?)),
             5 => Ok(Self::Bitfield(BitfieldPayload::try_from(
                 value[8..].to_vec(),
             )?)),
             6 => Ok(Self::Request(RequestPayload::try_from(
                 value[8..].to_vec(),
             )?)),
-            7 => Ok(Self::Piece(PiecePayload::try_from(value[8..].to_vec())?)),
+            7 => Ok(Self::Piece(PiecePayload::try_from(value[5..].to_vec())?)),
             8 => {
-                Ok(Self::Cancel(CancelPayload::try_from(value[8..].to_vec())?))
+                Ok(Self::Cancel(CancelPayload::try_from(value[5..].to_vec())?))
             }
             _ => Err(DecodeError::InvalidMessageType),
         }
