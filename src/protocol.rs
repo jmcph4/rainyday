@@ -680,4 +680,100 @@ mod tests {
 
         assert_eq!(actual_bytes, expected_bytes);
     }
+
+    #[test]
+    fn test_decode_have_normal() {
+        let bytes: Bytes =
+            vec![0x00, 0x00, 0x00, 0x05, 0x04, 0x00, 0x00, 0x00, 0xff];
+
+        let result: Result<PeerMessage, DecodeError> =
+            PeerMessage::try_from(bytes);
+
+        dbg!(&result);
+
+        assert!(result.is_ok());
+
+        let actual_message: PeerMessage = result.unwrap();
+        let expected_message: PeerMessage =
+            PeerMessage::Have(HavePayload { index: 255 });
+
+        assert_eq!(actual_message, expected_message);
+    }
+
+    #[test]
+    fn test_decode_have_abnormal_bad_id() {
+        let bytes: Bytes =
+            vec![0x00, 0x00, 0x00, 0x05, 0xff, 0x00, 0x00, 0x00, 0xff];
+
+        let result: Result<PeerMessage, DecodeError> =
+            PeerMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::InvalidMessageType;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
+    fn test_decode_have_abnormal_bad_length() {
+        let bytes: Bytes =
+            vec![0x00, 0x00, 0x00, 0xff, 0x04, 0x00, 0x00, 0x00, 0xff];
+
+        let result: Result<PeerMessage, DecodeError> =
+            PeerMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::WrongLength;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
+    fn test_decode_have_abnormal_surplus_data() {
+        let bytes: Bytes = vec![
+            0x00, 0x00, 0x00, 0x08, 0x04, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00,
+            0x00,
+        ];
+
+        let result: Result<PeerMessage, DecodeError> =
+            PeerMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::TooLong;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
+    fn test_decode_have_abnormal_deficit_data() {
+        let bytes: Bytes = vec![0x00, 0x00, 0x00, 0x00];
+
+        let result: Result<PeerMessage, DecodeError> =
+            PeerMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::TooShort;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
+    fn test_encode_have_normal() {
+        let message: PeerMessage =
+            PeerMessage::Have(HavePayload { index: 255 });
+
+        let actual_bytes: Bytes = message.into();
+        let expected_bytes: Bytes =
+            vec![0x00, 0x00, 0x00, 0x05, 0x04, 0x00, 0x00, 0x00, 0xff];
+
+        assert_eq!(actual_bytes, expected_bytes);
+    }
 }
