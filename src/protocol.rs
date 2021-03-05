@@ -209,19 +209,23 @@ impl TryFrom<Bytes> for PeerMessage {
     type Error = DecodeError;
 
     fn try_from(value: Bytes) -> Result<Self, Self::Error> {
-        if value.len() < 2 * size_of::<u32>() {
+        if value.len() < size_of::<u32>() + 1 {
             return Err(DecodeError::TooShort);
         }
 
         let length_bytes: [u8; 4] = [value[0], value[1], value[2], value[3]];
         let length: u32 = u32::from_be_bytes(length_bytes);
 
-        if value.len() != length as usize {
+        if value.len() != (length as usize) + size_of::<u32>() {
             return Err(DecodeError::WrongLength);
         }
 
-        let id_bytes: [u8; 4] = [value[4], value[5], value[6], value[7]];
-        let id: u32 = u32::from_be_bytes(id_bytes);
+        let id: u8 = value[4];
+
+        /* length check for non-payload peer messages */
+        if id <= 3 && value.len() > size_of::<u32>() + 1 {
+            return Err(DecodeError::TooLong);
+        }
 
         match id {
             0 => Ok(Self::Choke),
