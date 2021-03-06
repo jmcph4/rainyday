@@ -304,7 +304,7 @@ impl From<PeerMessage> for Bytes {
                 };
             }
             PeerMessage::Cancel(p) => {
-                length = 12;
+                length = 13;
                 id = 8;
                 payload = {
                     let tmp: Vec<Bytes> = vec![
@@ -1038,4 +1038,5 @@ mod tests {
 
         assert_eq!(actual_bytes, expected_bytes);
     }
+
 }
