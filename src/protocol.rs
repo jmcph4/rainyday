@@ -234,10 +234,10 @@ impl TryFrom<Bytes> for PeerMessage {
             3 => Ok(Self::NotInterested),
             4 => Ok(Self::Have(HavePayload::try_from(value[5..].to_vec())?)),
             5 => Ok(Self::Bitfield(BitfieldPayload::try_from(
-                value[8..].to_vec(),
+                value[5..].to_vec(),
             )?)),
             6 => Ok(Self::Request(RequestPayload::try_from(
-                value[8..].to_vec(),
+                value[5..].to_vec(),
             )?)),
             7 => Ok(Self::Piece(PiecePayload::try_from(value[5..].to_vec())?)),
             8 => {
@@ -688,8 +688,6 @@ mod tests {
 
         let result: Result<PeerMessage, DecodeError> =
             PeerMessage::try_from(bytes);
-
-        dbg!(&result);
 
         assert!(result.is_ok());
 
