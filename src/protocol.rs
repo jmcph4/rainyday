@@ -280,7 +280,7 @@ impl From<PeerMessage> for Bytes {
                 payload = p.into();
             }
             PeerMessage::Request(p) => {
-                length = 12;
+                length = 13;
                 id = 6;
                 payload = {
                     let tmp: Vec<Bytes> = vec![
