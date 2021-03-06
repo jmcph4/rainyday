@@ -857,4 +857,95 @@ mod tests {
 
         assert_eq!(actual_bytes, expected_bytes);
     }
+
+    #[test]
+    fn test_decode_request_normal() {
+        let bytes: Bytes = vec![
+            0x00, 0x00, 0x00, 0x0d, 0x06, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00, 0x01, 0x00,
+        ];
+
+        let result: Result<PeerMessage, DecodeError> =
+            PeerMessage::try_from(bytes);
+
+        assert!(result.is_ok());
+
+        let actual_message: PeerMessage = result.unwrap();
+        let expected_message: PeerMessage =
+            PeerMessage::Request(RequestPayload {
+                index: 33,
+                begin: 2048,
+                length: 256,
+            });
+
+        assert_eq!(actual_message, expected_message);
+    }
+
+    #[test]
+    fn test_decode_request_abnormal_bad_id() {
+        let bytes: Bytes = vec![
+            0x00, 0x00, 0x00, 0x0d, 0xff, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00, 0x01, 0x00,
+        ];
+
+        let result: Result<PeerMessage, DecodeError> =
+            PeerMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::InvalidMessageType;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
+    fn test_decode_request_abnormal_bad_length() {
+        let bytes: Bytes = vec![
+            0x00, 0x00, 0x00, 0xff, 0x06, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00, 0x01, 0x00,
+        ];
+
+        let result: Result<PeerMessage, DecodeError> =
+            PeerMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::WrongLength;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
+    fn test_decode_request_abnormal_deficit_data() {
+        let bytes: Bytes = vec![0x00, 0x00, 0x00, 0x00];
+
+        let result: Result<PeerMessage, DecodeError> =
+            PeerMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::TooShort;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
+    fn test_encode_request_normal() {
+        let message: PeerMessage = PeerMessage::Request(RequestPayload {
+            index: 33,
+            begin: 2048,
+            length: 256,
+        });
+
+        let actual_bytes: Bytes = message.into();
+        let expected_bytes: Bytes = vec![
+            0x00, 0x00, 0x00, 0x0d, 0x06, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00,
+            0x08, 0x00, 0x00, 0x00, 0x01, 0x00,
+        ];
+
+        assert_eq!(actual_bytes, expected_bytes);
+    }
 }
