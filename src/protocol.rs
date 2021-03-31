@@ -1,8 +1,10 @@
 #![allow(dead_code)]
+use std::cmp::Ordering;
 use std::convert::TryFrom;
 use std::fmt::Display;
 use std::mem::size_of;
 
+use ascii::{AsciiChar, AsciiString};
 use thiserror::Error;
 
 type Bytes = Vec<u8>;
@@ -322,6 +324,64 @@ impl From<PeerMessage> for Bytes {
         let bytes: Vec<Bytes> = vec![length_bytes, vec![id], payload];
 
         bytes.iter().flatten().cloned().collect()
+    }
+}
+
+pub struct HandshakeMessage {
+    pub info_hash: Vec<u8>,
+    pub peer_id: Vec<u8>,
+}
+
+impl From<HandshakeMessage> for Bytes {
+    fn from(value: HandshakeMessage) -> Self {
+        /* safe to unwrap here due to hardcoding of input string */
+        let pstr: AsciiString =
+            AsciiString::from_ascii("BitTorrent protocol").unwrap();
+        let pstrlen: usize = pstr.len();
+        let reserved: Bytes = vec![0u8; 8]; /* zero out reserved bytes */
+
+        let fields: Vec<Bytes> = vec![
+            pstrlen.to_be_bytes().to_vec(),
+            pstr.into(),
+            reserved,
+            value.info_hash,
+            value.peer_id,
+        ];
+
+        fields.iter().flatten().cloned().collect()
+    }
+}
+
+impl TryFrom<Bytes> for HandshakeMessage {
+    type Error = DecodeError;
+
+    fn try_from(value: Bytes) -> Result<Self, Self::Error> {
+        /* bounds check the length */
+        match value.len().cmp(&71) {
+            Ordering::Less => return Err(DecodeError::TooShort),
+            Ordering::Greater => return Err(DecodeError::TooLong),
+            _ => {}
+        };
+
+        /* extract the fields themselves */
+        let pstrlen: u32 =
+            u32::from_be_bytes([value[0], value[1], value[2], value[3]]);
+
+        /* offsets into bytes array for convenience */
+        let info_hash_start: usize = 4 + (pstrlen as usize) + 8;
+        let peer_id_start: usize = info_hash_start + 20;
+
+        let _pstr: AsciiString = AsciiString::from(
+            value[4..(pstrlen as usize)]
+                .to_vec()
+                .iter()
+                .map(|x| AsciiChar::new(*x as char))
+                .collect::<Vec<AsciiChar>>(),
+        );
+        let info_hash: Bytes = value[info_hash_start..peer_id_start].to_vec();
+        let peer_id: Bytes = value[peer_id_start..].to_vec();
+
+        Ok(HandshakeMessage { info_hash, peer_id })
     }
 }
 
