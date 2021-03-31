@@ -327,6 +327,7 @@ impl From<PeerMessage> for Bytes {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HandshakeMessage {
     pub info_hash: Vec<u8>,
     pub peer_id: Vec<u8>,
@@ -357,18 +358,17 @@ impl TryFrom<Bytes> for HandshakeMessage {
 
     fn try_from(value: Bytes) -> Result<Self, Self::Error> {
         /* bounds check the length */
-        match value.len().cmp(&71) {
+        match value.len().cmp(&68) {
             Ordering::Less => return Err(DecodeError::TooShort),
             Ordering::Greater => return Err(DecodeError::TooLong),
             _ => {}
         };
 
         /* extract the fields themselves */
-        let pstrlen: u32 =
-            u32::from_be_bytes([value[0], value[1], value[2], value[3]]);
+        let pstrlen: u8 = value[0];
 
         /* offsets into bytes array for convenience */
-        let info_hash_start: usize = 4 + (pstrlen as usize) + 8;
+        let info_hash_start: usize = 1 + (pstrlen as usize) + 8;
         let peer_id_start: usize = info_hash_start + 20;
 
         let _pstr: AsciiString = AsciiString::from(
@@ -1191,6 +1191,32 @@ mod tests {
     }
 
     #[test]
+    fn test_decode_handshake_normal() {
+        let bytes: Bytes = vec![
+            0x13, 0x42, 0x69, 0x74, 0x54, 0x6f, 0x72, 0x72, 0x65, 0x6e, 0x74,
+            0x20, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+            0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+            0x02, 0x02,
+        ];
+
+        let result: Result<HandshakeMessage, DecodeError> =
+            HandshakeMessage::try_from(bytes);
+
+        assert!(result.is_ok());
+
+        let actual_message: HandshakeMessage = result.unwrap();
+        let expected_message: HandshakeMessage = HandshakeMessage {
+            info_hash: vec![1u8; 20],
+            peer_id: vec![2u8; 20],
+        };
+
+        assert_eq!(actual_message, expected_message);
+    }
+
+    #[test]
     fn test_encode_handshake_normal() {
         let info_hash: Bytes = vec![1u8; 20];
         let peer_id: Bytes = vec![2u8; 20];
@@ -1208,7 +1234,6 @@ mod tests {
             0x02, 0x02,
         ];
 
-        dbg!(&actual_bytes); // DEBUG
         assert_eq!(actual_bytes, expected_bytes);
     }
 }
