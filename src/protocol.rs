@@ -337,7 +337,7 @@ impl From<HandshakeMessage> for Bytes {
         /* safe to unwrap here due to hardcoding of input string */
         let pstr: AsciiString =
             AsciiString::from_ascii("BitTorrent protocol").unwrap();
-        let pstrlen: usize = pstr.len();
+        let pstrlen: u8 = pstr.len() as u8;
         let reserved: Bytes = vec![0u8; 8]; /* zero out reserved bytes */
 
         let fields: Vec<Bytes> = vec![
@@ -1187,6 +1187,28 @@ mod tests {
             0x08, 0x00, 0x00, 0x00, 0x01, 0x00,
         ];
 
+        assert_eq!(actual_bytes, expected_bytes);
+    }
+
+    #[test]
+    fn test_encode_handshake_normal() {
+        let info_hash: Bytes = vec![1u8; 20];
+        let peer_id: Bytes = vec![2u8; 20];
+
+        let message: HandshakeMessage = HandshakeMessage { info_hash, peer_id };
+
+        let actual_bytes: Bytes = message.into();
+        let expected_bytes: Bytes = vec![
+            0x13, 0x42, 0x69, 0x74, 0x54, 0x6f, 0x72, 0x72, 0x65, 0x6e, 0x74,
+            0x20, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+            0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+            0x02, 0x02,
+        ];
+
+        dbg!(&actual_bytes); // DEBUG
         assert_eq!(actual_bytes, expected_bytes);
     }
 }
