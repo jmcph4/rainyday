@@ -1,3 +1,5 @@
+#![allow(clippy::needless_question_mark)] /* TODO: investigate this */
+
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufReader, Read};
