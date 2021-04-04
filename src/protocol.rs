@@ -1217,6 +1217,36 @@ mod tests {
     }
 
     #[test]
+    fn test_decode_handshake_deficit_data() {
+        let bytes: Bytes = vec![1u8; 20]; /* too short */
+
+        let result: Result<HandshakeMessage, DecodeError> =
+            HandshakeMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::TooShort;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
+    fn test_decode_handshake_surplus_data() {
+        let bytes: Bytes = vec![1u8; 100]; /* too long */
+
+        let result: Result<HandshakeMessage, DecodeError> =
+            HandshakeMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::TooLong;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
     fn test_encode_handshake_normal() {
         let info_hash: Bytes = vec![1u8; 20];
         let peer_id: Bytes = vec![2u8; 20];
