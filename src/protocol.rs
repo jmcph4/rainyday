@@ -1,8 +1,10 @@
 #![allow(dead_code)]
+use std::cmp::Ordering;
 use std::convert::TryFrom;
 use std::fmt::Display;
 use std::mem::size_of;
 
+use ascii::{AsciiChar, AsciiString};
 use thiserror::Error;
 
 type Bytes = Vec<u8>;
@@ -322,6 +324,64 @@ impl From<PeerMessage> for Bytes {
         let bytes: Vec<Bytes> = vec![length_bytes, vec![id], payload];
 
         bytes.iter().flatten().cloned().collect()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HandshakeMessage {
+    pub info_hash: Vec<u8>,
+    pub peer_id: Vec<u8>,
+}
+
+impl From<HandshakeMessage> for Bytes {
+    fn from(value: HandshakeMessage) -> Self {
+        /* safe to unwrap here due to hardcoding of input string */
+        let pstr: AsciiString =
+            AsciiString::from_ascii("BitTorrent protocol").unwrap();
+        let pstrlen: u8 = pstr.len() as u8;
+        let reserved: Bytes = vec![0u8; 8]; /* zero out reserved bytes */
+
+        let fields: Vec<Bytes> = vec![
+            pstrlen.to_be_bytes().to_vec(),
+            pstr.into(),
+            reserved,
+            value.info_hash,
+            value.peer_id,
+        ];
+
+        fields.iter().flatten().cloned().collect()
+    }
+}
+
+impl TryFrom<Bytes> for HandshakeMessage {
+    type Error = DecodeError;
+
+    fn try_from(value: Bytes) -> Result<Self, Self::Error> {
+        /* bounds check the length */
+        match value.len().cmp(&68) {
+            Ordering::Less => return Err(DecodeError::TooShort),
+            Ordering::Greater => return Err(DecodeError::TooLong),
+            _ => {}
+        };
+
+        /* extract the fields themselves */
+        let pstrlen: u8 = value[0];
+
+        /* offsets into bytes array for convenience */
+        let info_hash_start: usize = 1 + (pstrlen as usize) + 8;
+        let peer_id_start: usize = info_hash_start + 20;
+
+        let _pstr: AsciiString = AsciiString::from(
+            value[4..(pstrlen as usize)]
+                .to_vec()
+                .iter()
+                .map(|x| AsciiChar::new(*x as char))
+                .collect::<Vec<AsciiChar>>(),
+        );
+        let info_hash: Bytes = value[info_hash_start..peer_id_start].to_vec();
+        let peer_id: Bytes = value[peer_id_start..].to_vec();
+
+        Ok(HandshakeMessage { info_hash, peer_id })
     }
 }
 
@@ -1125,6 +1185,83 @@ mod tests {
         let expected_bytes: Bytes = vec![
             0x00, 0x00, 0x00, 0x0d, 0x08, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00,
             0x08, 0x00, 0x00, 0x00, 0x01, 0x00,
+        ];
+
+        assert_eq!(actual_bytes, expected_bytes);
+    }
+
+    #[test]
+    fn test_decode_handshake_normal() {
+        let bytes: Bytes = vec![
+            0x13, 0x42, 0x69, 0x74, 0x54, 0x6f, 0x72, 0x72, 0x65, 0x6e, 0x74,
+            0x20, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+            0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+            0x02, 0x02,
+        ];
+
+        let result: Result<HandshakeMessage, DecodeError> =
+            HandshakeMessage::try_from(bytes);
+
+        assert!(result.is_ok());
+
+        let actual_message: HandshakeMessage = result.unwrap();
+        let expected_message: HandshakeMessage = HandshakeMessage {
+            info_hash: vec![1u8; 20],
+            peer_id: vec![2u8; 20],
+        };
+
+        assert_eq!(actual_message, expected_message);
+    }
+
+    #[test]
+    fn test_decode_handshake_deficit_data() {
+        let bytes: Bytes = vec![1u8; 20]; /* too short */
+
+        let result: Result<HandshakeMessage, DecodeError> =
+            HandshakeMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::TooShort;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
+    fn test_decode_handshake_surplus_data() {
+        let bytes: Bytes = vec![1u8; 100]; /* too long */
+
+        let result: Result<HandshakeMessage, DecodeError> =
+            HandshakeMessage::try_from(bytes);
+
+        assert!(result.is_err());
+
+        let actual_error: DecodeError = result.unwrap_err();
+        let expected_error: DecodeError = DecodeError::TooLong;
+
+        assert_eq!(actual_error, expected_error);
+    }
+
+    #[test]
+    fn test_encode_handshake_normal() {
+        let info_hash: Bytes = vec![1u8; 20];
+        let peer_id: Bytes = vec![2u8; 20];
+
+        let message: HandshakeMessage = HandshakeMessage { info_hash, peer_id };
+
+        let actual_bytes: Bytes = message.into();
+        let expected_bytes: Bytes = vec![
+            0x13, 0x42, 0x69, 0x74, 0x54, 0x6f, 0x72, 0x72, 0x65, 0x6e, 0x74,
+            0x20, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+            0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+            0x02, 0x02,
         ];
 
         assert_eq!(actual_bytes, expected_bytes);
