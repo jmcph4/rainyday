@@ -25,6 +25,7 @@ impl Default for Config {
 impl TryFrom<File> for Config {
     type Error = anyhow::Error;
 
+    #[allow(clippy::needless_question_mark)]
     fn try_from(value: File) -> Result<Self, Self::Error> {
         let mut contents: String = String::new();
         let mut buf: BufReader<File> = BufReader::new(value);
